@@ -1,32 +1,18 @@
 <script>
   export let Label = "";
   export let Value = "";
-
-  switch (Label) {
-    case "Entry Time":
-      Value = "10:00";
-      break;
-    case "Spread Width":
-      Value = "30";
-      break;
-    case "Entry Credit":
-      Value = "1.5";
-        break;
-    case "Number of Spreads":
-        Value = "3";
-        break;  
-    case "Stop Price":
-        Value = "1.1";
-        break;
-    case "Limit Price":
-        Value = "1";
-        break;
-    case "Stop Loss Multiplier":
-        Value = "2";
-        break;
-    default:
-      Value = "";
-      break;
+  export let disabled = false;
+  export let redText = false;
+  export let greenText = false;
+  export let whiteText = false;
+  
+  $: {
+      if (Label === "Total Profit") {
+        const totalProfit = parseFloat(Value);
+        greenText = totalProfit > 0;
+        redText = totalProfit < 0;
+        whiteText = totalProfit === 0;
+    }
   }
 </script>
 
@@ -34,19 +20,21 @@
     <p class="input-field-label">{Label}</p>
 
     {#if Label === "Entry Time"}
-        <input type="text" name="input-{Label}" required maxLength="5" bind:value={Value}>
+        <input type="text" class="input" name="input-{Label}" required maxLength="5" bind:value={Value}>
     {:else if Label === "Spread Width"}
-        <input type="text" name="input-{Label}" required maxlength="3" bind:value={Value}>
+        <input type="text" class="input" name="input-{Label}" required maxlength="3" bind:value={Value}>
     {:else if Label === "Entry Credit"}
-        <input type="text" name="input-{Label}" required maxlength="3" bind:value={Value}>
+        <input type="text" class="input" name="input-{Label}" required maxlength="3" bind:value={Value}>
     {:else if Label === "Number of Spreads"}
-        <input type="text" name="input-{Label}" required maxlength="1" bind:value={Value}>
+        <input type="text" class="input" name="input-{Label}" required maxlength="1" bind:value={Value}>
     {:else if Label === "Stop Price"}
-        <input type="text" name="input-{Label}" required maxlength="3" bind:value={Value}>
+        <input type="text" class="input" name="input-{Label}" required maxlength="3" bind:value={Value}>
     {:else if Label === "Limit Price"}
-        <input type="text" name="input-{Label}" required maxlength="3" bind:value={Value}>
+        <input type="text" class="input" name="input-{Label}" required maxlength="3" bind:value={Value}>
     {:else if Label === "Stop Loss Multiplier"}
-        <input type="text" name="input-{Label}" required maxlength="3" bind:value={Value}>
+        <input type="text" class="input" name="input-{Label}" required maxlength="3" bind:value={Value}>
+    {:else}
+        <input type="text" name="input-{Label}" bind:value={Value} disabled={disabled} class:greenText={greenText} class:redText={redText} class:whiteText={whiteText}>
     {/if}
 </div>
 
@@ -70,13 +58,26 @@
         border: none;
         text-align: right;
         padding-right: 0.75rem;
+        border-radius: 5px;
     }
-
-    input:hover {
+    
+    .input:hover {
         outline: 2px solid #4e4e4e;
     }
 
-    input:focus {
+    .input:focus {
         outline: 2px solid #888888;
+    }
+
+    .greenText {
+        color: #4CAF50;
+    }
+
+    .redText {
+        color: #F44336;
+    }
+
+    .whiteText {
+        color: #FFFFFF;
     }
 </style>

@@ -7,14 +7,26 @@
     let ProfitOverTimeChart;
     let profitOverTimeLayout;
 
+    let DailyWinLossChart;
+    let dailyWinLossLayout;
+
     // inputs
-    let entryTime = "";
-    let spreadWidth = "";
-    let entryCredit = "";
-    let numberOfSpreads = "";
-    let stopPrice = "";
-    let limitPrice = "";
-    let stopLossMultiplier = "";
+    let entryTime = "10:00";
+    let spreadWidth = "30";
+    let entryCredit = "1.5";
+    let numberOfSpreads = "3";
+    let stopPrice = "1.1";
+    let limitPrice = "1";
+    let stopLossMultiplier = "2";
+
+    // outputs
+    let totalProfit = "";
+    let totalTrades = "";
+    let winCount = "";
+    let lossCount = "";
+    let winRate = "";
+    let maxDailyWin = "";
+    let maxDailyLoss = "";
 
     // sets graph height to match input container height
     onMount(() => {
@@ -204,7 +216,13 @@
         try {
           let functionResponse = JSON.parse(execution.responseBody).response;
 
-          const totalProfit = functionResponse.totalProfit;
+          totalProfit = functionResponse.totalProfit;
+          totalTrades = functionResponse.totalTrades;
+          winCount = functionResponse.winCount;
+          lossCount = functionResponse.loseCount;
+          winRate = functionResponse.winRate;
+          maxDailyWin = functionResponse.maxDailyWin;
+          maxDailyLoss = functionResponse.maxDailyLoss;
           const dates = functionResponse.dates;
           const profitOverTime = functionResponse.profitOverTime;
 
@@ -256,6 +274,37 @@
       <div id="ProfitOverTimeChart" bind:this={ProfitOverTimeChart}></div>
     </div>
   </div>
+
+  <div class="container-horizontal">
+    <!-- output results -->
+    <div class="container-child" id="container-output">
+      <h2> Results </h2>
+
+      <div class="container-horizontal">
+          <InputField Label="Total Profit" bind:Value={totalProfit} disabled={true} whiteText={true}/>
+          <InputField Label="Total Trades" bind:Value={totalTrades} disabled={true} whiteText={true}/>
+      </div>
+
+      <div class="container-horizontal">
+          <InputField Label="Win Count" bind:Value={winCount} disabled={true} greenText={true}/>
+          <InputField Label="Lose Count" bind:Value={lossCount} disabled={true} redText={true}/>
+      </div>
+
+      <div class="container-horizontal">
+          <InputField Label="Win Rate" bind:Value={winRate} disabled={true} whiteText={true}/>
+          <InputField Label="Max Daily Win" bind:Value={maxDailyWin} disabled={true} greenText={true}/>
+      </div>
+
+      <div class="container-horizontal">
+          <InputField Label="Max Daily Loss" bind:Value={maxDailyLoss} disabled={true} redText={true}/>
+      </div>
+    </div>
+
+    <!-- graph -->
+    <div class="container-child" id="container-graph">
+      <div id="DailyWinLossChart" bind:this={DailyWinLossChart}></div>
+    </div>
+  </div>
 </main>
 
 <style>
@@ -294,13 +343,17 @@
     padding: 1rem;
   }
 
-  #container-input {
+  #container-input, #container-output {
     width: 50%;
+    border-radius: 15px;
+    box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.8);
   }
 
   #container-graph {
     width: 50%;
     overflow: hidden;
+    border-radius: 15px;
+    box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.8);
   }
   
   #ProfitOverTimeChart {
@@ -323,6 +376,7 @@
     text-align: center;
     color: white;
     cursor: pointer;
+    border-radius: 5px;
   }
 
   #BacktestButton:hover {
