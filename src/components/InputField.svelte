@@ -54,7 +54,7 @@
     input {
         width: 100%;
         height: 1.75rem;
-        background-color: #242424;
+        background-color: #1E1E1E;
         border: none;
         text-align: right;
         padding-right: 0.75rem;
@@ -70,7 +70,7 @@
     }
 
     .greenText {
-        color: #4CAF50;
+        color: #44AD65;
     }
 
     .redText {

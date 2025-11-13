@@ -1,38 +1,41 @@
 <script>
-    import { onMount } from 'svelte';
-    import InputField from './components/InputField.svelte';
-    import Plotly from 'plotly.js-dist-min';
-    import { Client, Functions } from 'appwrite';
+  import { onMount } from 'svelte';
+  import InputField from './components/InputField.svelte';
+  import Plotly from 'plotly.js-dist-min';
+  import { Client, Functions } from 'appwrite';
 
-    let ProfitOverTimeChart;
-    let profitOverTimeLayout;
+  let ProfitOverTimeChart;
+  let profitOverTimeLayout;
 
-    let DailyWinLossChart;
-    let dailyWinLossLayout;
+  let DailyWinLossChart;
+  let dailyWinLossLayout;
 
-    // inputs
-    let entryTime = "10:00";
-    let spreadWidth = "30";
-    let entryCredit = "1.5";
-    let numberOfSpreads = "3";
-    let stopPrice = "1.1";
-    let limitPrice = "1";
-    let stopLossMultiplier = "2";
+  let loadingVisible = false;
 
-    // outputs
-    let totalProfit = "";
-    let totalTrades = "";
-    let winCount = "";
-    let lossCount = "";
-    let winRate = "";
-    let maxDailyWin = "";
-    let maxDailyLoss = "";
+  // inputs
+  let entryTime = "10:15";
+  let spreadWidth = "50";
+  let entryCredit = "1.2";
+  let numberOfSpreads = "3";
+  let stopPrice = "1.0";
+  let limitPrice = "0.8";
+  let stopLossMultiplier = "2";
+
+  // outputs
+  let totalProfit = "";
+  let totalTrades = "";
+  let winCount = "";
+  let lossCount = "";
+  let winRate = "";
+  let maxDailyWin = "";
+  let maxDailyLoss = "";
 
     // sets graph height to match input container height
     onMount(() => {
-      const input = document.getElementById('container-input');
-      const graph = document.getElementById('container-graph');
-      graph.style.height = `${input.offsetHeight}px`;
+      // no longer need?
+      //const input = document.getElementById('container-input');
+      //const graph = document.getElementById('container-graph');
+      //graph.style.height = `${input.offsetHeight}px`;
     });
 
     // initalize plotly chart
@@ -89,16 +92,80 @@
           range: [0, 100],
         },
         showlegend: false,
-        paper_bgcolor: '#161616',
-        plot_bgcolor: '#161616',
+        paper_bgcolor: '#282828',
+        plot_bgcolor: '#282828',
+      };
+
+      dailyWinLossLayout = {
+        title: {
+          text: 'Daily Total Profits/Losses',
+          font: {
+            color: 'white',
+            size: 15
+          },
+          x: 0.5
+        },
+        margin: {
+          t: 25,
+          b: 50,
+          l: 60,
+          r: 25
+        },
+        autosize: true,
+        xaxis: {
+          title: {
+            text: 'Date',
+            font: {
+              size: 15,
+              color: 'white'
+            }
+          },
+          tickfont: {
+            color: '#C9C9CA',
+            size: 12
+          },
+          linecolor: '#C9C9CA',
+          type: 'date',
+          tickformat: '%b %d',
+          range: ['2024-02-12', '2024-02-16'],
+          dtick: 86400000,
+        },
+        yaxis: {
+          title: {
+            text: 'Profit',
+            font: {
+              size: 15,
+              color: 'white'
+            },
+            standoff: 5,
+          },
+          automargin: true,
+          tickfont: {
+            color: '#C9C9CA',
+            size: 12
+          },
+          linecolor: '#C9C9CA',
+          autorange: true,
+        },
+        barmode: 'relative',
+        showlegend: false,
+        paper_bgcolor: '#282828',
+        plot_bgcolor: '#282828',
       };
       
       Plotly.newPlot(ProfitOverTimeChart, [{x: [], y: [], type: 'scatter'}], profitOverTimeLayout, { responsive: true });
       Plotly.Plots.resize(ProfitOverTimeChart);
+
+      Plotly.newPlot(DailyWinLossChart, [{x: [], y: [], type: 'bar'}], dailyWinLossLayout, { responsive: true });
+      Plotly.Plots.resize(DailyWinLossChart);
     });
 
-    // plot graph
-    function plotProfitOverTime(dates, profitOverTime) {
+    function formatDate(dates) {
+      // check if dates already formatted
+      if (dates[0].includes('-')) {
+        return;
+      }
+
       // format to yyyy-mm-dd
       for (let i=0; i<dates.length; i++) {
         const day = dates[i].slice(6,8);
@@ -106,7 +173,11 @@
         const year = dates[i].slice(0,4);
         dates[i] = `${year}-${month}-${day}`;
       }
+      return dates;
+    }
 
+    // plot graph
+    function plotProfitOverTime(dates, profitOverTime) {
       // adjust y-axis range based on data
       const max = (Math.max(...profitOverTime) / 10) * 10;
       const min = (Math.min(...profitOverTime) / 10) * 10;
@@ -186,6 +257,27 @@
       Plotly.Plots.resize(ProfitOverTimeChart);
     }
 
+    function plotDailyWinLoss(dates, dailyProfits, dailyLosses) {
+      const data = [
+        {
+          x: dates,
+          y: dailyProfits,
+          type: 'bar',
+          name: 'Profit',
+          marker: { color: '#2A8346' },
+        },
+        {
+          x: dates,
+          y: dailyLosses,
+          type: 'bar',
+          name: 'Loss',
+          marker: { color: '#E51B1B' },
+        }
+      ];
+
+      Plotly.react(DailyWinLossChart, data, dailyWinLossLayout, { responsive: true });
+    }
+
     // appwrite client setup
     const client = new Client()
     .setEndpoint('https://tor.cloud.appwrite.io/v1')
@@ -193,6 +285,7 @@
     const functions = new Functions(client);
 
     async function getResults() {
+      loadingVisible = true;
       const parameters = {
         entryTime,
         spreadWidth,
@@ -223,15 +316,22 @@
           winRate = functionResponse.winRate;
           maxDailyWin = functionResponse.maxDailyWin;
           maxDailyLoss = functionResponse.maxDailyLoss;
-          const dates = functionResponse.dates;
-          const profitOverTime = functionResponse.profitOverTime;
 
+          let dates = functionResponse.dates;
+          const profitOverTime = functionResponse.profitOverTime;
+          const dailyProfits = functionResponse.dailyProfits;
+          const dailyLosses = functionResponse.dailyLosses;
+
+          dates = formatDate(dates);
           plotProfitOverTime(dates, profitOverTime);
+          plotDailyWinLoss(dates, dailyProfits, dailyLosses);
         } catch (error) {
             console.error('failed to parse response:', error);
         }
       } catch (error) {
         console.error('error:', error);
+      } finally {
+        loadingVisible = false;
       }
     }
 </script>
@@ -244,33 +344,38 @@
   <div class="container-horizontal">
     <!-- input parameters -->
     <div class="container-child" id="container-input">
+      <div class="container-horizontal" id="input-header">
         <h2>Configuration</h2>
+        {#if loadingVisible}
+          <img src="public/loading.gif"  alt="Loading..." id="loading"/>
+        {/if}
+      </div>
 
-        <div class="container-horizontal">
-          <InputField Label="Entry Time" bind:Value={entryTime}/>
-          <InputField Label="Spread Width" bind:Value={spreadWidth}/>
-        </div>
+      <div class="container-horizontal">
+        <InputField Label="Entry Time" bind:Value={entryTime}/>
+        <InputField Label="Spread Width" bind:Value={spreadWidth}/>
+      </div>
 
-        <div class="container-horizontal">
-          <InputField Label="Entry Credit" bind:Value={entryCredit}/>
-          <InputField Label="Number of Spreads" bind:Value={numberOfSpreads}/>
-        </div>
+      <div class="container-horizontal">
+        <InputField Label="Entry Credit" bind:Value={entryCredit}/>
+        <InputField Label="Number of Spreads" bind:Value={numberOfSpreads}/>
+      </div>
 
-        <div class="container-horizontal">
-          <InputField Label="Stop Price" bind:Value={stopPrice}/>
-          <InputField Label="Limit Price" bind:Value={limitPrice}/>
-        </div>
+      <div class="container-horizontal">
+        <InputField Label="Stop Price" bind:Value={stopPrice}/>
+        <InputField Label="Limit Price" bind:Value={limitPrice}/>
+      </div>
 
-        <div class="container-horizontal">
-          <InputField Label="Stop Loss Multiplier" bind:Value={stopLossMultiplier}/>
-          <div id="BacktestButtonContainer">
-            <button id="BacktestButton" type="button" on:click={getResults}>Run Backtest</button>
-          </div>
+      <div class="container-horizontal">
+        <InputField Label="Stop Loss Multiplier" bind:Value={stopLossMultiplier}/>
+        <div id="BacktestButtonContainer">
+          <button id="BacktestButton" type="button" on:click={getResults}>Run Backtest</button>
         </div>
+      </div>
     </div>
 
     <!-- graph -->
-    <div class="container-child" id="container-graph">
+    <div class="container-child container-graph">
       <div id="ProfitOverTimeChart" bind:this={ProfitOverTimeChart}></div>
     </div>
   </div>
@@ -301,10 +406,45 @@
     </div>
 
     <!-- graph -->
-    <div class="container-child" id="container-graph">
+    <div class="container-child container-graph">
       <div id="DailyWinLossChart" bind:this={DailyWinLossChart}></div>
     </div>
   </div>
+
+  <div class="container-horizontal">
+    <div class="container-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Spread</th>
+            <th>Credit at Open</th>
+            <th>Execution Time</th>
+            <th>Execution Credit</th>
+            <th>Stop Out Time</th>
+            <th>Stop Out Price</th>
+            <th>Total Profit</th>
+          </tr>
+        </thead>
+        <tbody>
+            <tr>
+              <td>1</td>
+              <td>2</td>
+              <td>3</td>
+              <td>4</td>
+              <td>5</td>
+              <td>6</td>
+              <td>7</td>
+              <td>8</td>
+              <td>9</td>
+            </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="spacer" style="height: 2rem;"></div>
 </main>
 
 <style>
@@ -319,7 +459,7 @@
   }
 
   .top-nav-bar {
-    background-color: rgb(0, 0, 0);
+    background-color: #282828;
     color: rgb(255, 255, 255);
     font-weight: bold;
     font-size: 2.5rem;
@@ -339,24 +479,32 @@
   }
 
   .container-child {
-    background-color: #161616;
+    background-color: #282828;
     padding: 1rem;
   }
 
   #container-input, #container-output {
     width: 50%;
-    border-radius: 15px;
-    box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
   }
 
-  #container-graph {
+  #input-header {
+    margin: 0rem;
+    justify-content: space-between;
+  }
+
+  #loading {
+    width: 30px;
+    height: 30px;
+  }
+
+  .container-graph {
     width: 50%;
     overflow: hidden;
-    border-radius: 15px;
-    box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
   }
   
-  #ProfitOverTimeChart {
+  #ProfitOverTimeChart, #DailyWinLossChart {
     width: 100%;
     height: 100%;
   }
@@ -387,4 +535,27 @@
     background-color: #082080;
   }
 
+  .container-table {
+    width: 100%;
+    background-color: #282828;
+    border-radius: 10px;
+  }
+
+  table{
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  th {
+    text-align: left;
+    padding: 7px;
+  }
+
+  td {
+    padding: 7px;
+  }
+
+  tr {
+    text-align: right;
+  }
 </style>
