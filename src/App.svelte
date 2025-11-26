@@ -29,6 +29,7 @@
   let winRate = "";
   let maxDailyWin = "";
   let maxDailyLoss = "";
+  let spreadTableData = [];
 
     // sets graph height to match input container height
     onMount(() => {
@@ -71,8 +72,8 @@
           linecolor: '#C9C9CA',
           type: 'date',
           tickformat: '%b %d',
-          range: ['2024-02-12', '2024-02-16'],
-          dtick: 86400000,
+          range: ['2024-02-01', '2024-02-29'],
+          dtick: 7*86400000,
         },
         yaxis: {
           title: {
@@ -127,8 +128,8 @@
           linecolor: '#C9C9CA',
           type: 'date',
           tickformat: '%b %d',
-          range: ['2024-02-12', '2024-02-16'],
-          dtick: 86400000,
+          range: ['2024-02-01', '2024-02-29'],
+          dtick: 7*86400000,
         },
         yaxis: {
           title: {
@@ -145,6 +146,7 @@
             size: 12
           },
           linecolor: '#C9C9CA',
+          range: [0, 100],
           autorange: true,
         },
         barmode: 'relative',
@@ -300,7 +302,7 @@
       try {
         // call appwrite function
         const execution = await functions.createExecution(
-          '690eb25c0005266fa532',
+          '69264aad002b8281f866',
           JSON.stringify(parameters),
           false // false = synchronous (wait for response), true = asynchronous (do not wait)
         );
@@ -316,11 +318,13 @@
           winRate = functionResponse.winRate;
           maxDailyWin = functionResponse.maxDailyWin;
           maxDailyLoss = functionResponse.maxDailyLoss;
+          spreadTableData = functionResponse.spreadData;
+          console.log("spread table data:", spreadTableData);
 
           let dates = functionResponse.dates;
-          const profitOverTime = functionResponse.profitOverTime;
-          const dailyProfits = functionResponse.dailyProfits;
-          const dailyLosses = functionResponse.dailyLosses;
+          let profitOverTime = functionResponse.profitOverTime;
+          let dailyProfits = functionResponse.dailyProfits;
+          let dailyLosses = functionResponse.dailyLosses;
 
           dates = formatDate(dates);
           plotProfitOverTime(dates, profitOverTime);
@@ -347,7 +351,7 @@
       <div class="container-horizontal" id="input-header">
         <h2>Configuration</h2>
         {#if loadingVisible}
-          <img src="public/loading.gif"  alt="Loading..." id="loading"/>
+          <img src="loading.gif"  alt="Loading..." id="loading"/>
         {/if}
       </div>
 
@@ -428,17 +432,19 @@
           </tr>
         </thead>
         <tbody>
+          {#each spreadTableData as row}
             <tr>
-              <td>1</td>
-              <td>2</td>
-              <td>3</td>
-              <td>4</td>
-              <td>5</td>
-              <td>6</td>
-              <td>7</td>
-              <td>8</td>
-              <td>9</td>
+              <td>{row.spreadDate}</td>
+              <td>{row.spreadType}</td> 
+              <td>{row.spreadSpread}</td>
+              <td>{row.spreadCreditAtOpen}</td>
+              <td>{row.spreadExecutionTime}</td>
+              <td>{row.spreadExecutionCredit}</td>
+              <td>{row.spreadStopOutTime}</td>
+              <td>{row.spreadStopOutPrice}</td>
+              <td>{row.spreadProfit}</td>
             </tr>
+          {/each}
         </tbody>
       </table>
     </div>
@@ -539,6 +545,8 @@
     width: 100%;
     background-color: #282828;
     border-radius: 10px;
+    max-height: 40vh;
+    overflow-y: auto;
   }
 
   table{
@@ -549,6 +557,7 @@
   th {
     text-align: left;
     padding: 7px;
+    background-color: #282828;
   }
 
   td {
@@ -556,6 +565,11 @@
   }
 
   tr {
-    text-align: right;
+    text-align: left;
+    background-color: #1E1E1E;
+  }
+
+  tr:hover {
+    background-color: #333333;
   }
 </style>
